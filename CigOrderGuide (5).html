@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cigarette Order Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;
+    --text:#1a1916;--text-muted:#7a7870;--accent:#c8440a;--accent-bg:#fdf1ec;--accent-border:#f0c4b0;
+    --success:#2a7a4b;--success-bg:#edf7f1;--success-border:#b0dcc0;
+    --wa:#25d366;--wa-dark:#1aad52;--radius:10px;--radius-sm:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+  header{background:var(--text);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .header-title{font-size:16px;font-weight:600;}
+  .header-sub{font-size:12px;color:#9a9890;margin-top:2px;}
+  .stats-bar{display:flex;border-bottom:1px solid var(--border);background:var(--surface);}
+  .stat{flex:1;padding:14px 20px;border-right:1px solid var(--border);text-align:center;}
+  .stat:last-child{border-right:none;}
+  .stat-val{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;}
+  .stat-val.red{color:var(--accent);}
+  .stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+  .toolbar{padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:10;}
+  .search-wrap{flex:1;min-width:200px;position:relative;}
+  .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;}
+  input[type="search"],input[type="number"]{font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);padding:7px 10px;outline:none;transition:border-color .15s;}
+  input[type="search"]{padding-left:32px;width:100%;}
+  input:focus{border-color:var(--text);}
+  .btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:7px 16px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap;transition:background .12s;}
+  .btn:hover{background:var(--bg);}
+  .btn.active{background:var(--success-bg);border-color:var(--success-border);color:var(--success);}
+  .btn.wa{background:var(--wa);border-color:var(--wa);color:#fff;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .btn.wa:hover{background:var(--wa-dark);border-color:var(--wa-dark);}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:620px;}
+  thead th{background:#f0ede6;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover td{background:#fafaf7;}
+  tbody tr.ok-row td{opacity:.38;}
+  td{padding:9px 12px;vertical-align:middle;background:var(--surface);}
+  .item-name{font-weight:500;font-size:13px;}
+  .item-meta{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-top:1px;}
+  td input[type="number"]{width:72px;text-align:center;padding:5px 6px;font-family:'DM Mono',monospace;font-size:13px;background:var(--surface);}
+  .combined-val{font-family:'DM Mono',monospace;font-size:13px;text-align:center;font-weight:500;}
+  .order-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:600;text-align:center;}
+  .order-val.need{color:var(--accent);}
+  .order-val.ok{color:var(--success);}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;}
+  .badge.need{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);}
+  .badge.ok{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);}
+  .divider-row td{background:#f0ede6 !important;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:6px 12px;}
+  .empty-row td{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;background:var(--surface) !important;}
+  mark{background:#ffe066;color:inherit;border-radius:2px;padding:0 1px;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,8,.55);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:500px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+  .modal-header{background:var(--text);color:#fff;padding:16px 20px;font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center;}
+  .modal-close{background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1;}
+  .modal-close:hover{color:#fff;}
+  .modal-body{padding:20px;}
+  .order-preview{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;max-height:240px;overflow-y:auto;margin-bottom:16px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;}
+  .preview-item{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid var(--border);}
+  .preview-item:last-child{border-bottom:none;}
+  .preview-qty{color:var(--accent);font-weight:600;white-space:nowrap;}
+  .wa-note{background:#f0fdf4;border:1px solid #b0dcc0;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:#2a7a4b;margin-bottom:16px;line-height:1.6;}
+  .no-order-msg{background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--radius-sm);padding:20px;color:var(--success);font-weight:500;text-align:center;font-size:14px;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+  @media(max-width:600px){.stats-bar{flex-wrap:wrap;}.stat{min-width:50%;border-right:none;border-bottom:1px solid var(--border);}header{padding:14px 16px;}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="header-title">Cigarette Inventory — Order Guide</div>
+    <div class="header-sub">Fill in On Display &amp; Under Cabinets counts, then tap Send Order</div>
+  </div>
+  <button class="btn wa" onclick="openModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Send Order via WhatsApp
+  </button>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="stat-showing">136</div><div class="stat-label">Showing</div></div>
+  <div class="stat"><div class="stat-val red" id="stat-need">0</div><div class="stat-label">Need to order</div></div>
+  <div class="stat"><div class="stat-val" id="stat-ok">0</div><div class="stat-label">At par / OK</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="search" placeholder="Search by name, item #, or UPC..." oninput="render()" />
+  </div>
+  <button class="btn" id="toggle-btn" onclick="toggleOk()">Hide items at par</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:30%">Item</th>
+        <th style="width:11%;text-align:center">On Display</th>
+        <th style="width:13%;text-align:center">Under Cabinets</th>
+        <th style="width:12%;text-align:center">Must Have</th>
+        <th style="width:10%;text-align:center">Combined</th>
+        <th style="width:10%;text-align:center">Order Qty</th>
+        <th style="width:10%;text-align:center">Status</th>
+      </tr>
+    </thead>
+    <tbody id="items-body"></tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Send Order via WhatsApp</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const OWNER_PHONE='14046689091';
+const RAW=[{"item_number":"4341202","item_name":"American Spirit - Dark Blue (Turquoise)","upc":"47995855246","must_have":1.5},{"item_number":"4341137","item_name":"AS - YELLOW","upc":"47995855093","must_have":1.5},{"item_number":"4337366","item_name":"Camel Blue Box","upc":"","must_have":1.5},{"item_number":"4337325","item_name":"Camel filter shorts","upc":"","must_have":1.2},{"item_number":"4337382","item_name":"Camel Crush Menthol","upc":"","must_have":1.5},{"item_number":"4337390","item_name":"Camel Crush Menthol silver","upc":"","must_have":2.0},{"item_number":"4362117","item_name":"Camel Turkish Royal (red color)","upc":"","must_have":0.5},{"item_number":"","item_name":"Misty MENTHOL Green 120","upc":"","must_have":0.0},{"item_number":"4347159","item_name":"Virginia Slim Menthol Box Green Color","upc":"","must_have":1.0},{"item_number":"","item_name":"Winston Silver","upc":"","must_have":0.0},{"item_number":"4341103","item_name":"AS- LIGHT BLUE","upc":"","must_have":1.0},{"item_number":"4341178","item_name":"AS - LIGHT GREEN","upc":"","must_have":0.5},{"item_number":"4341152","item_name":"AS -orange","upc":"","must_have":1.0},{"item_number":"4347191","item_name":"Virginia Menthol yellow green super slim","upc":"","must_have":0.6},{"item_number":"4364501","item_name":"AS - SKY BLUE","upc":"","must_have":0.5},{"item_number":"4341160","item_name":"AS- DARK GREEN","upc":"","must_have":1.5},{"item_number":"4341186","item_name":"AS- BLACK","upc":"","must_have":0.1},{"item_number":"4341210","item_name":"AS- GOLD (DARK YELLOW)","upc":"","must_have":1.5},{"item_number":"4337358","item_name":"Camel Blue 99","upc":"","must_have":0.7},{"item_number":"4337317","item_name":"Camel filter 99","upc":"","must_have":0.3},{"item_number":"4345393","item_name":"Camel Crush Blue","upc":"","must_have":1.5},{"item_number":"4363693","item_name":"Camel crush Red Rich","upc":"","must_have":0.4},{"item_number":"4364105","item_name":"Camel Crush Smooth (green pack)","upc":"","must_have":0.1},{"item_number":"4364113","item_name":"Camel Crush Smooth Silver white","upc":"","must_have":0.1},{"item_number":"4362125","item_name":"Camel turkish gold (yellow color)","upc":"","must_have":0.5},{"item_number":"4362430","item_name":"Camel Turkish Jade","upc":"","must_have":0.2},{"item_number":"4362141","item_name":"Camel Turkish Jade Silver","upc":"","must_have":0.5},{"item_number":"4362133","item_name":"Camel Turkish Silver","upc":"","must_have":1.4},{"item_number":"4379020","item_name":"Misty Menthol Green slim","upc":"","must_have":0.1},{"item_number":"4379046","item_name":"Misty menthol silver slim","upc":"","must_have":0.5},{"item_number":"4344446","item_name":"Ventage","upc":"","must_have":0.0},{"item_number":"4347126","item_name":"Virgina Slim Silver pack box (dark blue color)","upc":"","must_have":0.1},{"item_number":"4347100","item_name":"VS Slim GOLD 120","upc":"","must_have":0.3},{"item_number":"4347092","item_name":"Virginia Menthol gold pack box (ylow green)","upc":"","must_have":0.1},{"item_number":"4347134","item_name":"Virginia Menthol Silver Pack Box","upc":"","must_have":1.0},{"item_number":"4347142","item_name":"Virginia red/pink (reg Short)","upc":"","must_have":0.1},{"item_number":"4347183","item_name":"Virginia red/pink super slim","upc":"","must_have":0.3},{"item_number":"4363248","item_name":"Winston Black","upc":"","must_have":0.1},{"item_number":"4361895","item_name":"Winston Gold 100","upc":"","must_have":0.1},{"item_number":"4361887","item_name":"Winston Gold short","upc":"","must_have":1.8},{"item_number":"4364253","item_name":"Winston Menthol green box","upc":"","must_have":0.1},{"item_number":"4361879","item_name":"Winston Red 100","upc":"","must_have":1.5},{"item_number":"4361861","item_name":"Winston Red short","upc":"","must_have":0.2},{"item_number":"4361903","item_name":"Winston White Box Short Natural Smooth","upc":"","must_have":0.0},{"item_number":"4965299","item_name":"Marlboro black gold","upc":"","must_have":1.0},{"item_number":"4965281","item_name":"marlboro black gold 100","upc":"","must_have":0.9},{"item_number":"4336483","item_name":"Marlboro gold pack 100","upc":"","must_have":5.0},{"item_number":"4336442","item_name":"Marlboro gold pack short","upc":"","must_have":11.0},{"item_number":"4336202","item_name":"Marlboro Menthol 100 (dark Green)","upc":"","must_have":3.0},{"item_number":"4336491","item_name":"Marlboro Menthol Gold 100","upc":"","must_have":1.5},{"item_number":"4336467","item_name":"Marlboro Menthol Gold short","upc":"","must_have":2.5},{"item_number":"4336178","item_name":"Marlboro Menthol Short (dark Green)","upc":"","must_have":3.0},{"item_number":"4336749","item_name":"Marlboro Menthol Silver 100","upc":"","must_have":2.0},{"item_number":"4336731","item_name":"Marlboro Menthol Silver Short","upc":"","must_have":2.5},{"item_number":"4336236","item_name":"Marlboro reb label short","upc":"","must_have":0.9},{"item_number":"4336244","item_name":"marlboro red label 100","upc":"","must_have":0.5},{"item_number":"4336194","item_name":"Marlboro red pack 100","upc":"","must_have":2.5},{"item_number":"4336145","item_name":"Marlboro red pack short","upc":"","must_have":4.0},{"item_number":"4336723","item_name":"Marlboro silver 100 Mellow","upc":"","must_have":2.0},{"item_number":"4336715","item_name":"Marlboro silver short mellow","upc":"","must_have":3.0},{"item_number":"4361739","item_name":"Mavrick Gold 100","upc":"","must_have":1.5},{"item_number":"4361721","item_name":"Mavrick Gold short","upc":"","must_have":1.0},{"item_number":"4361762","item_name":"Mavrick Green 100","upc":"","must_have":1.5},{"item_number":"4361754","item_name":"Mavrick Green Short","upc":"","must_have":1.0},{"item_number":"4361713","item_name":"Mavrick Red 100","upc":"","must_have":1.0},{"item_number":"4361705","item_name":"Mavrick Red short","upc":"","must_have":1.5},{"item_number":"4337044","item_name":"Marlboro 72 black","upc":"","must_have":0.5},{"item_number":"4336970","item_name":"Marlboro 72 menthl","upc":"","must_have":2.0},{"item_number":"4337044","item_name":"Marlboro 72 red","upc":"","must_have":2.5},{"item_number":"4342291","item_name":"Marlboro 72 Silver","upc":"","must_have":1.0},{"item_number":"4957528","item_name":"Marlboro black /Red Strip 100","upc":"","must_have":2.0},{"item_number":"4357620","item_name":"Marlboro Black/ green 100","upc":"","must_have":1.0},{"item_number":"4357141","item_name":"Marlboro Black/ GREEN short","upc":"","must_have":4.0},{"item_number":"4357133","item_name":"Marlboro black/ Red stripe short","upc":"","must_have":3.0},{"item_number":"4336756","item_name":"Marlboro blend 27","upc":"","must_have":0.1},{"item_number":"4363974","item_name":"Marlboro bold ice *check before ordering","upc":"","must_have":0.1},{"item_number":"4359212","item_name":"Marlboro nxt","upc":"","must_have":2.5},{"item_number":"4355178","item_name":"Marlboro RED sp. select 100","upc":"","must_have":2.0},{"item_number":"4355046","item_name":"Marlboro RED sp. select short","upc":"","must_have":2.5},{"item_number":"4362042","item_name":"Marlboro slate *check before ordering*","upc":"","must_have":0.1},{"item_number":"4337093","item_name":"Marlboro Smooth 100","upc":"","must_have":1.0},{"item_number":"4337069","item_name":"Marlboro 72 gold","upc":"","must_have":1.0},{"item_number":"4363636","item_name":"Marlboro smooth ice ***check before ordering**","upc":"","must_have":0.1},{"item_number":"4336988","item_name":"Marlboro Smooth Short","upc":"","must_have":2.0},{"item_number":"4359519","item_name":"Marlboro southern cut","upc":"","must_have":0.3},{"item_number":"4355160","item_name":"Marlboro SSelct Gold 100","upc":"","must_have":2.0},{"item_number":"4355038","item_name":"Marlboro SSelect. GOLD short","upc":"","must_have":3.0},{"item_number":"4336939","item_name":"L&M Blue 100","upc":"","must_have":1.5},{"item_number":"4336921","item_name":"L&M Blue short","upc":"","must_have":2.0},{"item_number":"4336954","item_name":"L&M Green 100","upc":"","must_have":1.5},{"item_number":"4336947","item_name":"L&M Green short","upc":"","must_have":2.5},{"item_number":"4336913","item_name":"L&M Red 100","upc":"","must_have":2.5},{"item_number":"4336905","item_name":"L&M Red Short","upc":"","must_have":1.5},{"item_number":"4340618","item_name":"New Port box short","upc":"","must_have":7.0},{"item_number":"4359774","item_name":"Newport black 100","upc":"","must_have":1.0},{"item_number":"4359766","item_name":"Newport black short","upc":"","must_have":1.0},{"item_number":"4340626","item_name":"Newport box 100","upc":"","must_have":6.0},{"item_number":"4340659","item_name":"Newport Menthol Gold Short (light green)","upc":"","must_have":1.3},{"item_number":"4360822","item_name":"Newport Non Menthol 100 (gold color)","upc":"","must_have":1.0},{"item_number":"4360814","item_name":"Newport NON Menthol short (gold color)","upc":"","must_have":1.0},{"item_number":"4356804","item_name":"Newport red 100","upc":"","must_have":1.2},{"item_number":"4356812","item_name":"Newport red short","upc":"","must_have":1.0},{"item_number":"4340642","item_name":"Newport soft 100","upc":"","must_have":3.0},{"item_number":"4340634","item_name":"Newport soft short (king)","upc":"","must_have":4.0},{"item_number":"4372942","item_name":"Senca Red 100","upc":"","must_have":1.0},{"item_number":"4372967","item_name":"Seneca Green 100","upc":"","must_have":2.0},{"item_number":"4372850","item_name":"Seneca green Short","upc":"","must_have":1.5},{"item_number":"4372835","item_name":"Seneca Red short","upc":"","must_have":1.0},{"item_number":"4358818","item_name":"PallMall White Short","upc":"","must_have":0.5},{"item_number":"4341947","item_name":"PallMall Red 100","upc":"","must_have":0.7},{"item_number":"4361853","item_name":"Salem slim 100 box","upc":"","must_have":1.0},{"item_number":"4361796","item_name":"Salem Dark Green Short","upc":"","must_have":1.5},{"item_number":"4361838","item_name":"Salem Silver short","upc":"","must_have":0.1},{"item_number":"4342002","item_name":"PallMall green short","upc":"","must_have":1.0},{"item_number":"4341996","item_name":"PallMall green 100","upc":"","must_have":0.6},{"item_number":"4358800","item_name":"PallMall white 100","upc":"","must_have":0.8},{"item_number":"4341988","item_name":"PallMall blue short","upc":"","must_have":1.5},{"item_number":"4341970","item_name":"PallMall Blue 100","upc":"","must_have":1.0},{"item_number":"4358792","item_name":"PallMall Black Short","upc":"","must_have":0.5},{"item_number":"4358784","item_name":"PallMall Black 100","upc":"","must_have":0.5},{"item_number":"4341954","item_name":"PallMall Red Short","upc":"","must_have":0.2},{"item_number":"4342036","item_name":"PallMall Orange short","upc":"","must_have":1.0},{"item_number":"4342028","item_name":"PallMall Orange 100","upc":"","must_have":0.9},{"item_number":"4361689","item_name":"Kool Blue Short","upc":"","must_have":0.2},{"item_number":"4361697","item_name":"Kool Blue 100","upc":"","must_have":0.5},{"item_number":"4361655","item_name":"Kool Green Short","upc":"","must_have":1.0},{"item_number":"4361663","item_name":"Kool Green 100","upc":"","must_have":1.0},{"item_number":"4361804","item_name":"Salem Dark Green 100","upc":"","must_have":0.3},{"item_number":"4361812","item_name":"Salem gold short","upc":"","must_have":0.2},{"item_number":"4361820","item_name":"Salem Gold 100","upc":"","must_have":0.1},{"item_number":"4365367","item_name":"Pall mall Select Blue Short","upc":"","must_have":3.0},{"item_number":"4365417","item_name":"Pall Mall Select Blue 100s","upc":"","must_have":1.0},{"item_number":"4365375","item_name":"Pall Mall Select Red Short","upc":"","must_have":1.0},{"item_number":"4365409","item_name":"Pall Mall Select Red 100s","upc":"","must_have":1.0},{"item_number":"4365383","item_name":"Pall Mall Select Menthol (green) Short","upc":"","must_have":1.0},{"item_number":"4365391","item_name":"Pall Mall Select Menthol (Green) 100s","upc":"","must_have":1.0}];
+
+let state=RAW.map((r,i)=>({...r,id:i,loc1:0,loc2:0}));
+let hideOk=false;
+
+function calc(item){
+  const combined=(parseFloat(item.loc1)||0)+(parseFloat(item.loc2)||0);
+  const need=parseFloat(item.must_have)||0;
+  const order=Math.max(0,+(need-combined).toFixed(2));
+  return{combined:+combined.toFixed(2),order};
+}
+
+function hl(text,q){
+  if(!q)return text;
+  const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return text.replace(re,'<mark>$1</mark>');
+}
+
+function toggleOk(){
+  hideOk=!hideOk;
+  const btn=document.getElementById('toggle-btn');
+  btn.textContent=hideOk?'Show all items':'Hide items at par';
+  btn.classList.toggle('active',hideOk);
+  render();
+}
+
+function render(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const tbody=document.getElementById('items-body');
+  tbody.innerHTML='';
+  let filtered=state.filter(i=>!q||i.item_name.toLowerCase().includes(q)||i.item_number.toLowerCase().includes(q)||(i.upc&&i.upc.toLowerCase().includes(q)));
+  const needItems=filtered.filter(i=>calc(i).order>0);
+  const okItems=filtered.filter(i=>calc(i).order===0);
+
+  function addRow(item){
+    const{combined,order}=calc(item);
+    const tr=document.createElement('tr');
+    if(order===0)tr.classList.add('ok-row');
+    tr.innerHTML=`
+      <td><div class="item-name">${hl(item.item_name,q)}</div><div class="item-meta">#${hl(item.item_number||'—',q)}${item.upc?' &nbsp;|&nbsp; UPC: '+hl(item.upc,q):''}</div></td>
+      <td style="text-align:center"><input type="number" min="0" step="0.5" value="${item.loc1}" onchange="upd(${item.id},'loc1',this.value)"/></td>
+      <td style="text-align:center"><input type="number" min="0" step="0.5" value="${item.loc2}" onchange="upd(${item.id},'loc2',this.value)"/></td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:500">${item.must_have}</td>
+      <td><div class="combined-val">${combined}</div></td>
+      <td><div class="order-val ${order>0?'need':'ok'}">${order>0?order:'—'}</div></td>
+      <td style="text-align:center"><span class="badge ${order>0?'need':'ok'}">${order>0?'Order':'OK'}</span></td>`;
+    tbody.appendChild(tr);
+  }
+
+  needItems.forEach(addRow);
+  if(!hideOk){
+    if(needItems.length>0&&okItems.length>0){
+      const div=document.createElement('tr');
+      div.classList.add('divider-row');
+      div.innerHTML='<td colspan="7">Items at par — no order needed</td>';
+      tbody.appendChild(div);
+    }
+    okItems.forEach(addRow);
+  }
+  if(filtered.length===0){const tr=document.createElement('tr');tr.classList.add('empty-row');tr.innerHTML=`<td colspan="7">No items match "${q}"</td>`;tbody.appendChild(tr);}
+  if(hideOk&&needItems.length===0&&okItems.length>0){const tr=document.createElement('tr');tr.classList.add('empty-row');tr.innerHTML='<td colspan="7">All items are at par — nothing to order!</td>';tbody.appendChild(tr);}
+  document.getElementById('stat-showing').textContent=filtered.length;
+  document.getElementById('stat-need').textContent=needItems.length;
+  document.getElementById('stat-ok').textContent=okItems.length;
+}
+
+function upd(id,field,value){
+  const item=state.find(i=>i.id===id);
+  if(item){item[field]=parseFloat(value)||0;render();}
+}
+
+function openModal(){
+  const orderItems=state.filter(i=>calc(i).order>0);
+  const mb=document.getElementById('modal-body');
+  const today=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  if(orderItems.length===0){
+    mb.innerHTML='<div class="no-order-msg">Everything is fully stocked — nothing to order today!</div><div class="modal-actions"><button class="btn" onclick="closeModal()">Close</button></div>';
+  } else {
+    let preview=orderItems.map(i=>{const{order}=calc(i);return`<div class="preview-item"><span>${i.item_name}${i.item_number?' (#'+i.item_number+')':''}</span><span class="preview-qty">x${order}</span></div>`;}).join('');
+    let msg=`🚬 CIGARETTE ORDER REQUEST\n📅 ${today}\n${'─'.repeat(32)}\n`;
+    orderItems.forEach(i=>{const{order}=calc(i);msg+=`• ${i.item_name}${i.item_number?' (#'+i.item_number+')':''} → ORDER: ${order}\n`;});
+    msg+=`${'─'.repeat(32)}\nTotal items to order: ${orderItems.length}`;
+    const waURL=`https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(msg)}`;
+    mb.innerHTML=`
+      <div class="wa-note">✅ WhatsApp will open with the order already typed — just tap <strong>Send</strong>!</div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px">Items to order (${orderItems.length})</div>
+      <div class="order-preview">${preview}</div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <a href="${waURL}" target="_blank" style="text-decoration:none" onclick="setTimeout(closeModal,300)">
+          <button class="btn wa">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Open WhatsApp &amp; Send
+          </button>
+        </a>
+      </div>`;
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+render();
+</script>
+</body>
+</html>
