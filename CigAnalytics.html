@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cigarette Order Analytics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;
+    --text:#1a1916;--text-muted:#7a7870;
+    --accent:#c8440a;--accent-bg:#fdf1ec;--accent-border:#f0c4b0;
+    --success:#2a7a4b;--success-bg:#edf7f1;--success-border:#b0dcc0;
+    --info:#1a6bb5;--info-bg:#e8f1fb;--info-border:#b0cef0;
+    --radius:10px;--radius-sm:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+
+  header{background:var(--text);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .title{font-size:17px;font-weight:600;}
+  .sub{font-size:12px;color:#9a9890;margin-top:2px;}
+
+  .main{max-width:900px;margin:0 auto;padding:20px 16px;}
+
+  /* CONTROLS */
+  .controls{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:12px;}
+  .control-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .control-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px;}
+  .control-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);}
+  select,input[type="text"]{font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);padding:9px 10px;outline:none;width:100%;}
+  select:focus,input:focus{border-color:var(--text);}
+  .btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:9px 20px;border-radius:var(--radius-sm);border:none;background:var(--text);color:#fff;cursor:pointer;white-space:nowrap;}
+  .btn:hover{background:#333;}
+  .btn.secondary{background:var(--surface);border:1px solid var(--border-strong);color:var(--text);}
+  .btn.secondary:hover{background:var(--bg);}
+
+  /* SUMMARY CARDS */
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .summary-card.highlight{border-left:3px solid var(--accent);}
+  .sc-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+  .sc-val{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);}
+  .sc-val.red{color:var(--accent);}
+  .sc-val.green{color:var(--success);}
+  .sc-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
+
+  /* WEEK TABLE */
+  .section-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .section-title span{font-size:11px;font-weight:400;color:var(--text-muted);}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{background:#f0ede6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:1px solid var(--border);}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover td{background:#fafaf7;}
+  td{padding:10px 14px;vertical-align:middle;}
+  td.mono{font-family:'DM Mono',monospace;font-weight:500;}
+  td.qty{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--accent);}
+  td.avg-row{background:var(--success-bg) !important;font-weight:600;color:var(--success);}
+  td.avg-row.mono{font-family:'DM Mono',monospace;}
+
+  /* BAR CHART */
+  .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+  .bar-chart{display:flex;align-items:flex-end;gap:8px;height:160px;margin-top:12px;}
+  .bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+  .bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);min-height:4px;transition:height .3s;}
+  .bar.avg-bar{background:var(--success);}
+  .bar-label{font-size:10px;color:var(--text-muted);text-align:center;font-family:'DM Mono',monospace;}
+  .bar-val{font-size:11px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace;}
+
+  /* TOP ITEMS TABLE */
+  .rank-badge{display:inline-block;width:24px;height:24px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:11px;font-weight:600;text-align:center;line-height:22px;color:var(--text-muted);}
+  .rank-badge.gold{background:#fef3c7;border-color:#f0d080;color:#7a6010;}
+  .rank-badge.silver{background:#f1f5f9;border-color:#cbd5e1;color:#475569;}
+  .rank-badge.bronze{background:#fef7ee;border-color:#fed7aa;color:#9a3412;}
+
+  /* LOADING / ERROR */
+  .loading{text-align:center;padding:40px;color:var(--text-muted);font-size:14px;}
+  .error-box{background:#fff5f5;border:1px solid #f0b0b0;border-radius:var(--radius-sm);padding:14px;color:#a32d2d;font-size:13px;margin-bottom:16px;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);}
+  .empty-state .big{font-size:36px;margin-bottom:8px;}
+
+  /* SETUP BOX */
+  .setup-box{background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  .setup-box h3{font-size:14px;font-weight:600;color:var(--info);margin-bottom:8px;}
+  .setup-box p{font-size:13px;color:var(--info);line-height:1.6;}
+  .setup-box input{margin-top:10px;width:100%;}
+
+  @media(max-width:600px){
+    .summary-grid{grid-template-columns:1fr 1fr;}
+    .control-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">📊 Cigarette Order Analytics</div>
+    <div class="sub">Weekly order history &amp; trend analysis</div>
+  </div>
+  <a href="https://608810d.github.io/order-guide" style="text-decoration:none">
+    <button class="btn secondary">← Back to Order Guide</button>
+  </a>
+</header>
+
+<div class="main">
+
+  <!-- SETUP BOX -->
+  <div class="setup-box" id="setup-box" style="display:none">
+    <h3>⚙️ Connect your Google Sheet</h3>
+    <p>Paste your Google Apps Script Web App URL below to load your order history data.</p>
+    <input type="text" id="setup-url-input" placeholder="https://script.google.com/macros/s/..." />
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="saveURL()">Connect</button>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="control-row">
+      <div class="control-group" style="flex:2">
+        <div class="control-label">Select Cigarette Item</div>
+        <select id="item-select"><option value="">— Loading items... —</option></select>
+      </div>
+      <div class="control-group" style="flex:1;min-width:140px">
+        <div class="control-label">Look Back</div>
+        <select id="weeks-select">
+          <option value="3">Last 3 weeks</option>
+          <option value="4">Last 4 weeks</option>
+          <option value="6">Last 6 weeks</option>
+          <option value="8">Last 8 weeks</option>
+          <option value="12" selected>Last 12 weeks</option>
+          <option value="26">Last 26 weeks</option>
+          <option value="52">Last 52 weeks</option>
+          <option value="0">All time</option>
+        </select>
+      </div>
+      <button class="btn" onclick="analyze()" style="height:38px;align-self:flex-end">Analyze</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+  <div id="top-items-section"></div>
+
+</div>
+
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxTcxh-CXzjueI3OCT7CPA7FweyflV5beP-yedntdC8YgxtoANKnmlyLgTKBrCBUkZEtw/exec';
+
+let allData = [];
+
+// Load data on startup
+window.onload = function(){ loadData(); };
+
+function loadData(){
+  document.getElementById('results').innerHTML = '<div class="loading">⏳ Loading order history from Google Sheets...</div>';
+  fetch(SHEETS_URL)
+    .then(r => r.json())
+    .then(data => {
+      allData = data;
+      populateItems(data);
+      document.getElementById('results').innerHTML = '';
+      showTopItems(data, 12);
+    })
+    .catch(err => {
+      document.getElementById('results').innerHTML = `<div class="error-box">❌ Could not load data from Google Sheets. Make sure your Apps Script is deployed correctly and has the doGet function.<br><br>Error: ${err.message}</div>`;
+    });
+}
+
+function populateItems(data){
+  const items = [...new Set(data.map(r => r['Item Name']).filter(Boolean))].sort();
+  const sel = document.getElementById('item-select');
+  sel.innerHTML = '<option value="">— Select an item —</option>';
+  items.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+}
+
+function getWeekNumber(dateStr){
+  const d = new Date(dateStr);
+  if(isNaN(d)) return null;
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+}
+
+function analyze(){
+  const itemName = document.getElementById('item-select').value;
+  const weeksBack = parseInt(document.getElementById('weeks-select').value);
+
+  if(!itemName){ alert('Please select a cigarette item first.'); return; }
+  if(allData.length === 0){ alert('No data loaded yet. Please wait.'); return; }
+
+  // Filter by item
+  let rows = allData.filter(r => r['Item Name'] === itemName);
+
+  // Parse week numbers from data
+  rows = rows.map(r => {
+    let weekNum = null;
+    const weekStr = r['Week'] || '';
+    const match = weekStr.toString().match(/\d+/);
+    if(match) weekNum = parseInt(match[0]);
+    else weekNum = getWeekNumber(r['Date']);
+    return { ...r, weekNum, qty: parseFloat(r['Order Qty']) || 0 };
+  }).filter(r => r.weekNum !== null);
+
+  // Get current week
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const currentWeek = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+
+  // Filter by weeks back
+  if(weeksBack > 0){
+    const minWeek = currentWeek - weeksBack;
+    rows = rows.filter(r => r.weekNum >= minWeek);
+  }
+
+  if(rows.length === 0){
+    document.getElementById('results').innerHTML = `
+      <div class="empty-state">
+        <div class="big">📭</div>
+        <div>No order data found for <strong>${itemName}</strong> in the selected time period.</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">This item may not have been ordered yet or try selecting a longer time period.</div>
+      </div>`;
+    return;
+  }
+
+  // Group by week
+  const byWeek = {};
+  rows.forEach(r => {
+    if(!byWeek[r.weekNum]) byWeek[r.weekNum] = 0;
+    byWeek[r.weekNum] += r.qty;
+  });
+
+  const weeks = Object.keys(byWeek).map(Number).sort((a,b)=>a-b);
+  const qtys = weeks.map(w => byWeek[w]);
+  const total = qtys.reduce((a,b)=>a+b,0);
+  const avg = total / weeks.length;
+  const maxQty = Math.max(...qtys);
+  const minQty = Math.min(...qtys);
+  const weeksLabel = weeksBack === 0 ? 'all time' : `last ${weeksBack} weeks`;
+
+  // BUILD OUTPUT
+  let html = '';
+
+  // Summary cards
+  html += `<div class="summary-grid">
+    <div class="summary-card highlight">
+      <div class="sc-label">Avg per week</div>
+      <div class="sc-val red">${avg.toFixed(1)}</div>
+      <div class="sc-sub">Over ${weeks.length} week${weeks.length>1?'s':''}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Total ordered</div>
+      <div class="sc-val">${total.toFixed(1)}</div>
+      <div class="sc-sub">${weeksLabel}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Highest week</div>
+      <div class="sc-val">${maxQty.toFixed(1)}</div>
+      <div class="sc-sub">Week ${weeks[qtys.indexOf(maxQty)]}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Lowest week</div>
+      <div class="sc-val green">${minQty.toFixed(1)}</div>
+      <div class="sc-sub">Week ${weeks[qtys.indexOf(minQty)]}</div>
+    </div>
+  </div>`;
+
+  // Bar chart
+  html += `<div class="chart-wrap">
+    <div class="section-title">Weekly Order Quantities <span>${itemName}</span></div>
+    <div class="bar-chart">`;
+  weeks.forEach((w, i) => {
+    const pct = maxQty > 0 ? (qtys[i] / maxQty) * 100 : 0;
+    const heightPx = Math.max(4, (pct / 100) * 130);
+    const isAvg = Math.abs(qtys[i] - avg) < 0.01;
+    html += `<div class="bar-col">
+      <div class="bar-val">${qtys[i] % 1 === 0 ? qtys[i] : qtys[i].toFixed(1)}</div>
+      <div class="bar ${isAvg?'avg-bar':''}" style="height:${heightPx}px"></div>
+      <div class="bar-label">Wk ${w}</div>
+    </div>`;
+  });
+  // Avg line indicator
+  html += `</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--text-muted)">
+      <div style="width:14px;height:4px;background:var(--accent);border-radius:2px"></div> Weekly order &nbsp;&nbsp;
+      <div style="width:14px;height:4px;background:var(--success);border-radius:2px"></div> At average
+    </div>
+  </div>`;
+
+  // Week by week table
+  html += `<div class="section-title">Week by Week Breakdown <span>${itemName} — ${weeksLabel}</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Week</th>
+        <th>Year</th>
+        <th>Qty Ordered</th>
+        <th>vs. Average</th>
+      </tr></thead>
+      <tbody>`;
+
+  weeks.forEach((w, i) => {
+    const diff = qtys[i] - avg;
+    const diffStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+    const diffColor = diff > 0 ? 'color:var(--accent)' : diff < 0 ? 'color:var(--success)' : 'color:var(--text-muted)';
+    html += `<tr>
+      <td class="mono">Week ${w}</td>
+      <td class="mono">${new Date().getFullYear()}</td>
+      <td class="qty">${qtys[i] % 1 === 0 ? qtys[i] : qtys[i].toFixed(1)}</td>
+      <td class="mono" style="${diffColor}">${diffStr}</td>
+    </tr>`;
+  });
+
+  // Average row
+  html += `<tr>
+    <td class="avg-row" colspan="2">📊 Weekly Average</td>
+    <td class="avg-row mono">${avg.toFixed(1)}</td>
+    <td class="avg-row mono">—</td>
+  </tr>`;
+
+  html += `</tbody></table></div>`;
+
+  document.getElementById('results').innerHTML = html;
+  document.getElementById('top-items-section').innerHTML = '';
+}
+
+function showTopItems(data, weeksBack){
+  if(!data || data.length === 0) return;
+
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const currentWeek = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  const minWeek = currentWeek - weeksBack;
+
+  // Group by item
+  const byItem = {};
+  data.forEach(r => {
+    const weekStr = (r['Week']||'').toString();
+    const match = weekStr.match(/\d+/);
+    const weekNum = match ? parseInt(match[0]) : null;
+    if(weekNum && weekNum >= minWeek){
+      const name = r['Item Name'];
+      if(!name) return;
+      if(!byItem[name]) byItem[name] = {total:0, weeks:new Set()};
+      byItem[name].total += parseFloat(r['Order Qty'])||0;
+      byItem[name].weeks.add(weekNum);
+    }
+  });
+
+  const sorted = Object.entries(byItem)
+    .map(([name,v]) => ({name, total:v.total, weeks:v.weeks.size, avg: v.total/v.weeks.size}))
+    .sort((a,b) => b.total - a.total)
+    .slice(0, 10);
+
+  if(sorted.length === 0) return;
+
+  let html = `<div class="section-title" style="margin-top:8px">🏆 Top 10 Most Ordered Items <span>Last ${weeksBack} weeks</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Rank</th>
+        <th>Item Name</th>
+        <th>Total Ordered</th>
+        <th>Weeks Ordered</th>
+        <th>Avg / Week</th>
+      </tr></thead>
+      <tbody>`;
+
+  sorted.forEach((item, i) => {
+    const badgeClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    html += `<tr>
+      <td><span class="rank-badge ${badgeClass}">${i+1}</span></td>
+      <td style="font-weight:500">${item.name}</td>
+      <td class="qty">${item.total % 1 === 0 ? item.total : item.total.toFixed(1)}</td>
+      <td class="mono">${item.weeks}</td>
+      <td class="mono" style="color:var(--success);font-weight:600">${item.avg.toFixed(1)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById('top-items-section').innerHTML = html;
+}
+</script>
+</body>
+</html>
